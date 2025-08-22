@@ -1,0 +1,162 @@
+name: CI Pipeline
+on:
+  push:
+    branches:
+       - devops-implementation
+    paths:
+       - '**/CHANGELOG.md'
+  
+  workflow_dispatch:
+    inputs:
+      deployVer:
+        description: 'Enter Version which you want to deploy (Optional, auto-extracted on push)'
+        required: false
+        default: ''
+      deployEnv:
+        description: 'Enter Env where you want to deployed ITG (Optional, auto-extracted on push)'
+        required: false
+        default: ''
+
+env:
+   BUILDENV: 'ITG'
+   DEPLOYENV: 'ITG'
+   BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+   GitHubToken: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+ setup-env:
+    runs-on: [ label-name ]
+    outputs:
+      BUILDENV: ${{ steps.set-env.outputs.BUILDENV }}
+      DEPLOYENV: ${{ steps.set-env.outputs.DEPLOYENV }}
+    steps:
+      - name: Set BUILDENV
+        id: set-env
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && -n "${{ github.event.inputs.deployEnv }}" ]]; then
+            InputBuildEnv="${{ github.event.inputs.deployEnv }}"
+            echo "Using manually provided Deploying Environment: $InputBuildEnv"
+            echo "BUILDENV=${InputBuildEnv}" >> $GITHUB_ENV
+            echo "BUILDENV=${InputBuildEnv}" >> $GITHUB_OUTPUT
+            echo "DEPLOYENV=${DEPLOYENV}" >> $GITHUB_ENV
+            echo "DEPLOYENV=${DEPLOYENV}" >> $GITHUB_OUTPUT 
+          else
+            echo "BUILDENV=${BUILDENV}" >> $GITHUB_ENV
+            echo "BUILDENV=${BUILDENV}" >> $GITHUB_OUTPUT
+            echo "Auto-extracted version from pipeline: ${BUILDENV}"
+            echo "DEPLOYENV=${DEPLOYENV}" >> $GITHUB_ENV
+            echo "DEPLOYENV=${DEPLOYENV}" >> $GITHUB_OUTPUT
+          fi
+          
+ Clone:
+    runs-on: [ label-name ]
+    needs: [ setup-env ]
+    steps:
+    
+      - name: Cloning the Repo
+        run: echo ${{ github.workspace }}
+        
+      - name: Clear workspace
+        run: |
+            pwd
+            rm -rf ${{ github.workspace }}/*
+                
+      - name: Checkout code
+        run: |
+            echo "Branch Name:: ${{ env.BRANCH_NAME }}"
+            git clone -b ${{ env.BRANCH_NAME }} https://oauth2:${GitHubToken}@github.com.git
+
+ GetChangeLogVersion:
+    runs-on: [ label-name ]
+    needs: [ Clone ] 
+    outputs:
+      CV-Version: ${{ steps.build-step.outputs.CV_NUMBER }}
+    steps:   
+      - name: Extract CHANGELOG Version (if not provided manually)
+        id: build-step
+        run: |
+          pwd
+          env_Name=$(echo "${{ env.CLONEBRANCH }}" | sed 's/.*-//' | tr '[:lower:]' '[:upper:]')
+          echo Environment Name is $env_Name
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && -n "${{ github.event.inputs.deployEnv }}" && -n "${{ github.event.inputs.deployVer }}" ]]; then
+            inputBuildEnv="${{ github.event.inputs.deployEnv }}"
+            deployVersion="${{ github.event.inputs.deployVer }}"
+            echo "GetChangeLogVersion:Using manually provided version: $deployVersion"
+            echo "GetChangeLogVersion:Using manually Deployed Env: $inputBuildEnv"
+            echo "CV_NUMBER=${{ github.event.inputs.deployVer }}" >> $GITHUB_OUTPUT
+          else
+            cd ${{ github.workspace }}/devops
+            Current_version=$(grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+' CHANGELOG.md | sed '1q')
+            echo "Auto-extracted version from CHANGELOG: $Current_version"
+            echo "CV_NUMBER=${Current_version}" >> $GITHUB_OUTPUT
+            echo "Auto-extracted version from CHANGELOG: $Current_version"
+          fi
+
+ Build:
+  runs-on: [ label-name ]
+  needs: [ Coverity-Check, GetChangeLogVersion]
+  env:
+    CV-Version: ${{ needs.GetChangeLogVersion.outputs.CV-Version }}
+  steps:
+    - name: Build Java App with Maven
+      run: |
+        cd ${{ github.workspace }}/devops
+        mvn clean install
+        echo "application Build Completed"   
+
+ Artifact-Onboarding:
+  runs-on: [ label-name ]
+  needs: [Build, GetChangeLogVersion]
+  env:
+    CV-Version: ${{ needs.GetChangeLogVersion.outputs.CV-Version }}
+  steps:
+    - name: Upload jar to Artifactory
+      run: |
+        echo "Uploading jar file to Artifactory..."
+        file_path="${{ github.workspace }}/devops/target/devops.jar"
+        Artifactory_url="${{ secrets.ARTIFACTORY_URL }}/devops/${{ needs.GetChangeLogVersion.outputs.CV-Version }}/devops.jar"
+        curl -u "${{ secrets.ARTIFACTORY_USERNAME }}:${{ secrets.ARTIFACTORY_PASSWORD }}" -T "$file_path" "$Artifactory_url"
+        echo "jar file uploaded successfully."
+      shell: bash
+
+    - name: Download jar from Artifactory
+      run: |
+        echo "Downloading jar file..."
+        curl -u "${{ secrets.ARTIFACTORY_USERNAME }}:${{ secrets.ARTIFACTORY_PASSWORD }}" -o "${{ github.workspace }}/devops.jar" "${{ secrets.ARTIFACTORY_URL }}/devops/${{ needs.GetChangeLogVersion.outputs.CV-Version }}/devops.jar"
+        echo "Download complete."
+      shell: bash
+
+ Deployment:
+  runs-on: [ label-name ]
+  needs: [ Artifact-Onboarding, GetChangeLogVersion]
+  env:
+    CV-Version: ${{ needs.GetChangeLogVersion.outputs.CV-Version }}
+  steps:
+    - name: Stop old application (sample only)
+      run: |
+        echo "Simulating stop... (would normally run: pkill -f devops.jar)"
+        # pkill -f devops.jar || true
+
+    - name: Deploy new JAR (sample only)
+      run: |
+        echo "Simulating JAR deployment..."
+        echo "Copying devops.jar to /appInstall/devops/devops.jar (sample only)"
+        # cp devops.jar /appInstall/devops/devops.jar
+
+    - name: Start application (sample only)
+      run: |
+        echo "Simulating application startup..."
+        echo "Would normally run: nohup java -jar /appInstall/devops/devops.jar &"
+      
+ Gte-HealthCheck:
+    runs-on: [ label-name ]
+    needs: [ Deployment, GetChangeLogVersion ]
+    steps:
+      - name: Check HealthCheck
+        run: |
+              echo "Checking the Healthcheck"
+              cd ${{ github.workspace }}/devops/.github/scripts
+              pwd
+              python3.6 -m pytest -s healthcheck-itg.py
+              echo "Healthcheck is Completed"
+
