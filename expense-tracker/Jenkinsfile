@@ -1,0 +1,77 @@
+pipeline {
+    agent any
+
+    environment {
+        // SonarQube environment variables
+        SONAR_HOST_URL = credentials('SONAR_HOST_URL')   // Jenkins credentials ID
+        SONAR_TOKEN = credentials('SONAR_TOKEN')         // Jenkins credentials ID
+    }
+
+    tools {
+        // Use Java 17 installed on Jenkins
+        jdk 'jdk-17'
+        maven 'Maven-3.9.4'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                echo "Checking out code..."
+                checkout scm
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                echo "Running SonarQube analysis..."
+                withSonarQubeEnv('SonarQube') { // Name of SonarQube server in Jenkins
+                    sh """
+                        mvn clean verify sonar:sonar \
+                            -Dsonar.projectKey=expense-tracker \
+                            -Dsonar.projectName='Expense Tracker App' \
+                            -Dsonar.host.url=${SONAR_HOST_URL} \
+                            -Dsonar.login=${SONAR_TOKEN}
+                    """
+                }
+            }
+        }
+
+        stage('Build JAR') {
+            steps {
+                echo "Building Spring Boot JAR..."
+                sh 'mvn clean package -DskipTests'
+            }
+
+            post {
+                success {
+                    archiveArtifacts artifacts: 'target/expense-tracker-0.0.1-SNAPSHOT.jar', fingerprint: true
+                }
+            }
+        }
+
+        // Optional: Docker build stage
+        /*
+        stage('Build & Push Docker') {
+            steps {
+                echo "Building Docker image..."
+                sh """
+                    docker build -t mydockerhubusername/expense-tracker:latest .
+                    docker push mydockerhubusername/expense-tracker:latest
+                """
+            }
+        }
+        */
+    }
+
+    post {
+        always {
+            echo "Pipeline finished."
+        }
+        success {
+            echo "Build SUCCESS!"
+        }
+        failure {
+            echo "Build FAILED!"
+        }
+    }
+}
