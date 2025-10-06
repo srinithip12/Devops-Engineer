@@ -73,4 +73,3 @@ public class ExpenseController {
         return ResponseEntity.notFound().build();
     }
 }
-
