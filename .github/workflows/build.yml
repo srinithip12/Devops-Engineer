@@ -117,5 +117,9 @@ jobs:
     outputs:
       CV-Version: ${{ steps.build-step.outputs.CV_NUMBER }}
     steps: 
+
+      - name: Set JAVA_HOME
+        run: echo "JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java))))" >> $GITHUB_ENV
+      
       - name: Build JAR
         run: mvn -B clean package -DskipTests
