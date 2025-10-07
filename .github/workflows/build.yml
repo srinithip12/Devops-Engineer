@@ -122,4 +122,6 @@ jobs:
         run: echo "JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java))))" >> $GITHUB_ENV
       
       - name: Build JAR
-        run: mvn -B clean package -DskipTests
+        run: 
+            cd ${{ github.workspace }}/Devops-Engineer/Devops-Engineer/Devops-Engineer/expense-tracker
+            mvn -B clean package -DskipTests
