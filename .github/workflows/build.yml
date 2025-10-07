@@ -104,14 +104,13 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-            cd ${{ github.workspace }}/Devops-Engineer/expense-tracker
-            mvn -B clean verify sonar:sonar \
-              -Dsonar.projectKey=expense-tracker \
-              -Dsonar.projectName="expense-tracker" \
-              -Dsonar.host.url=http://15.168.15.34:9000/ \
-              -Dsonar.login=${{ secrets.SONAR_TOKEN }} \
-              -Dsonar.branch.name=${{ github.ref_name }} \
-              -Dsonar.maven.plugin.version=4.0.0.4121
+              cd ${{ github.workspace }}/Devops-Engineer/expense-tracker
+              mvn -B clean verify sonar:sonar \
+                -Dsonar.projectKey=expense-tracker \
+                -Dsonar.projectName="expense-tracker" \
+                -Dsonar.host.url=http://15.168.15.34:9000/ \
+                -Dsonar.login=${{ secrets.SONAR_TOKEN }} \
+                -Dsonar.maven.plugin.version=4.0.0.4121
  Build:
     runs-on: [ label-01 ]
     needs: [ Sonarqube ] 
