@@ -84,7 +84,7 @@ jobs:
             echo "GetChangeLogVersion:Using manually Deployed Env: $inputBuildEnv"
             echo "CV_NUMBER=${{ github.event.inputs.deployVer }}" >> $GITHUB_OUTPUT
           else
-            cd ${{ github.workspace }}/CHANGELOG.md
+            cd ${{ github.workspace }}/Devops-Engineer/CHANGELOG.md
             Current_version=$(grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+' CHANGELOG.md | sed '1q')
             echo "Auto-extracted version from CHANGELOG: $Current_version"
             echo "CV_NUMBER=${Current_version}" >> $GITHUB_OUTPUT
