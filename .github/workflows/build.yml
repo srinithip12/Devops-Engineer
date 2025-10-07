@@ -111,7 +111,7 @@ jobs:
             -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
             -Dsonar.login=${{ secrets.SONAR_TOKEN }} \
             -Dsonar.branch.name=${{ github.ref_name }}
-            
+            -Dsonar.maven.plugin.version=4.0.0.4121
  Build:
     runs-on: [ label-01 ]
     needs: [ Sonarqube ] 
