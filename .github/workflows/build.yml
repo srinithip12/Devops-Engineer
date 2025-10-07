@@ -103,7 +103,7 @@ jobs:
         run: |
           mvn -B clean verify sonar:sonar \
             -Dsonar.projectKey=expense-tracker \
-            -Dsonar.projectName="Expense Tracker App" \
+            -Dsonar.projectName="expense-tracker" \
             -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
             -Dsonar.login=${{ secrets.SONAR_TOKEN }}
 
