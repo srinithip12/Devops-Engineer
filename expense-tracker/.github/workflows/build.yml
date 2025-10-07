@@ -25,7 +25,7 @@ env:
 
 jobs:
  setup-env:
-    runs-on: [ label-name ]
+    runs-on: [ label-01 ]
     outputs:
       BUILDENV: ${{ steps.set-env.outputs.BUILDENV }}
       DEPLOYENV: ${{ steps.set-env.outputs.DEPLOYENV }}
@@ -49,7 +49,7 @@ jobs:
           fi
           
  Clone:
-    runs-on: [ label-name ]
+    runs-on: [ label-01 ]
     needs: [ setup-env ]
     steps:
     
@@ -67,7 +67,7 @@ jobs:
             git clone -b ${{ env.BRANCH_NAME }} https://oauth2:${{ secrets.GITHUBTOKEN }}@github.com/srinithip12/Devops-Engineer.git
 
  GetChangeLogVersion:
-    runs-on: [ label-name ]
+    runs-on: [ label-01 ]
     needs: [ Clone ] 
     outputs:
       CV-Version: ${{ steps.build-step.outputs.CV_NUMBER }}
@@ -92,8 +92,8 @@ jobs:
           fi
           
  Sonarqube:
-    runs-on: [ label-name ]
-    needs: [ Clone ] 
+    runs-on: [ label-01 ]
+    needs: [ GetChangeLogVersion ] 
     outputs:
       CV-Version: ${{ steps.build-step.outputs.CV_NUMBER }}
     steps: 
@@ -108,8 +108,8 @@ jobs:
             -Dsonar.login=${{ secrets.SONAR_TOKEN }}
 
  Build:
-    runs-on: [ label-name ]
-    needs: [ Clone ] 
+    runs-on: [ label-01 ]
+    needs: [ Sonarqube ] 
     outputs:
       CV-Version: ${{ steps.build-step.outputs.CV_NUMBER }}
     steps: 
