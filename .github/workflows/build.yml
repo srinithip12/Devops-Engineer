@@ -94,8 +94,8 @@ jobs:
  Sonarqube:
     runs-on: [ label-01 ]
     needs: [ GetChangeLogVersion ] 
-    outputs:
-      CV-Version: ${{ steps.build-step.outputs.CV_NUMBER }}
+    env:
+      CV-Version: ${{ needs.GetChangeLogVersion.outputs.CV-Version }}
     steps:
       - name: Set JAVA_HOME
         run: echo "JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java))))" >> $GITHUB_ENV
@@ -108,14 +108,15 @@ jobs:
               mvn -B clean verify sonar:sonar \
                 -Dsonar.projectKey=expense-tracker \
                 -Dsonar.projectName="expense-tracker" \
+                -Dsonar.projectVersion=$CV_VERSION \
                 -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
                 -Dsonar.login=${{ secrets.SONAR_TOKEN }} \
                 -Dsonar.maven.plugin.version=4.0.0.4121
  Build:
     runs-on: [ label-01 ]
     needs: [ Sonarqube ] 
-    outputs:
-      CV-Version: ${{ steps.build-step.outputs.CV_NUMBER }}
+    env:
+       CV-Version: ${{ needs.GetChangeLogVersion.outputs.CV-Version }}
     steps: 
 
       - name: Set JAVA_HOME
@@ -129,6 +130,8 @@ jobs:
  Deploy:
     runs-on: [ label-01 ]
     needs: [ Build ]
+    env:
+       CV-Version: ${{ needs.GetChangeLogVersion.outputs.CV-Version }}
     steps:
      - name: Deploy Expense Tracker App locally
        run: |
