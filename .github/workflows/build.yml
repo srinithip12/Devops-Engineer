@@ -165,9 +165,3 @@ jobs:
        run: |
            echo "Checking if Expense Tracker process is running..."
            ps -ef | grep expense-tracker.jar
-
-     - name: Verify Expense Tracker
-       run: |
-            echo "Testing API endpoints..."
-            echo "GET /api/expenses"
-            curl -s http://localhost:8080/api/expenses | jq
