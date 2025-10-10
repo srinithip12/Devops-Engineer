@@ -135,27 +135,31 @@ jobs:
     steps:
      - name: Deploy Expense Tracker App locally
        run: |
-        echo "Deploying Expense Tracker on local runner..."
+          echo "Deploying Expense Tracker on local runner..."
+          
+          # Ensure deployment directory exists
+          mkdir -p /opt/expense-tracker
+          
+          # Copy the built JAR from target
+          cp -f /opt/actions-runner/_work/Devops-Engineer/Devops-Engineer/Devops-Engineer/expense-tracker/target/expense-tracker-0.0.1-SNAPSHOT.jar /opt/expense-tracker/expense-tracker.jar
+          
+          # Stop existing app if running and restart it as gitrunner
+          sudo -u gitrunner bash -c '
+            PID=$(ps aux | grep "java -jar /opt/expense-tracker/expense-tracker.jar" | grep -v grep | awk "{print \$2}")
+            if [ -n "$PID" ]; then
+              echo "Stopping existing Expense Tracker... PID=$PID"
+              kill $PID
+              sleep 1
+            fi
+          
+            echo "Starting Expense Tracker..."
+            nohup java -jar /opt/expense-tracker/expense-tracker.jar > /opt/expense-tracker/app.log 2>&1 &
+            sleep 1
+          '
+          
+          echo "Expense Tracker deployed successfully!"
+          tail -n 20 /opt/expense-tracker/app.log
 
-        # Ensure deployment directory exists
-        mkdir -p /opt/expense-tracker
-
-        # Copy the built JAR from target
-        cp -f ${{ github.workspace }}/Devops-Engineer/expense-tracker/target/expense-tracker-0.0.1-SNAPSHOT.jar /opt/expense-tracker/expense-tracker.jar
-
-        # Stop existing app if running
-        sudo -u gitrunner bash -c '
-          PIDS=$(pgrep -f "java -jar /opt/expense-tracker/expense-tracker.jar")
-          if [ -n "$PIDS" ]; then
-            echo "Stopping existing Expense Tracker..."
-            kill $PIDS
-          fi
-        
-          echo "Starting Expense Tracker..."
-          nohup java -jar /opt/expense-tracker/expense-tracker.jar > /opt/expense-tracker/app.log 2>&1 &
-        '
-        echo "Expense Tracker deployed successfully!"
-        tail -n 20 /opt/expense-tracker/app.log
 
      - name: Verify the process
        run: |
