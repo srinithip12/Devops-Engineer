@@ -141,7 +141,7 @@ jobs:
         mkdir -p /opt/expense-tracker
 
         # Copy the built JAR from target
-        cp -f ${{ github.workspace }}/expense-tracker/target/expense-tracker-0.0.1-SNAPSHOT.jar /opt/expense-tracker/expense-tracker.jar
+        cp -f ${{ github.workspace }}/Devops-Engineer/expense-tracker/target/expense-tracker-0.0.1-SNAPSHOT.jar /opt/expense-tracker/expense-tracker.jar
 
         # Stop existing app if running
         if pgrep -f expense-tracker.jar > /dev/null; then
