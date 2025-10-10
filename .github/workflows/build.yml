@@ -67,29 +67,31 @@ jobs:
             git clone -b ${{ env.BRANCH_NAME }} https://oauth2:${{ secrets.GITHUBTOKEN }}@github.com/srinithip12/Devops-Engineer.git
 
  GetChangeLogVersion:
-    runs-on: [ label-01 ]
-    needs: [ Clone ] 
-    outputs:
-      CV-Version: ${{ steps.build-step.outputs.CV_NUMBER }}
-    steps:   
-      - name: Extract CHANGELOG Version (if not provided manually)
-        run: |
-          pwd
-          env_Name=$(echo "${{ env.CLONEBRANCH }}" | sed 's/.*-//' | tr '[:lower:]' '[:upper:]')
-          echo Environment Name is $env_Name
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" && -n "${{ github.event.inputs.deployEnv }}" && -n "${{ github.event.inputs.deployVer }}" ]]; then
-            inputBuildEnv="${{ github.event.inputs.deployEnv }}"
-            deployVersion="${{ github.event.inputs.deployVer }}"
-            echo "GetChangeLogVersion:Using manually provided version: $deployVersion"
-            echo "GetChangeLogVersion:Using manually Deployed Env: $inputBuildEnv"
-            echo "CV_NUMBER=${{ github.event.inputs.deployVer }}" >> $GITHUB_OUTPUT
-          else
-            cd ${{ github.workspace }}/Devops-Engineer
-            Current_version=$(grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+' CHANGELOG.md | sed '1q')
-            echo "Auto-extracted version from CHANGELOG: $Current_version"
-            echo "CV_NUMBER=${Current_version}" >> $GITHUB_OUTPUT
-            echo "Auto-extracted version from CHANGELOG: $Current_version"
-          fi
+  runs-on: [ label-01 ]
+  needs: [ Clone ] 
+  outputs:
+    CV-Version: ${{ steps.extract_version.outputs.CV_NUMBER }}
+  steps:   
+    - id: extract_version
+      name: Extract CHANGELOG Version (if not provided manually)
+      run: |
+        pwd
+        env_Name=$(echo "${{ env.CLONEBRANCH }}" | sed 's/.*-//' | tr '[:lower:]' '[:upper:]')
+        echo Environment Name is $env_Name
+        if [[ "${{ github.event_name }}" == "workflow_dispatch" && -n "${{ github.event.inputs.deployEnv }}" && -n "${{ github.event.inputs.deployVer }}" ]]; then
+          inputBuildEnv="${{ github.event.inputs.deployEnv }}"
+          deployVersion="${{ github.event.inputs.deployVer }}"
+          echo "GetChangeLogVersion:Using manually provided version: $deployVersion"
+          echo "GetChangeLogVersion:Using manually Deployed Env: $inputBuildEnv"
+          echo "CV_NUMBER=${{ github.event.inputs.deployVer }}" >> $GITHUB_OUTPUT
+        else
+          cd ${{ github.workspace }}/Devops-Engineer
+          Current_version=$(grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+' CHANGELOG.md | sed '1q')
+          echo "Auto-extracted version from CHANGELOG: $Current_version"
+          echo "CV_NUMBER=${Current_version}" >> $GITHUB_OUTPUT
+          echo "Auto-extracted version from CHANGELOG: $Current_version"
+        fi
+
           
  Sonarqube:
     runs-on: [ label-01 ]
@@ -125,7 +127,7 @@ jobs:
       - name: Build JAR
         run: 
             cd ${{ github.workspace }}/Devops-Engineer/expense-tracker
-            && mvn -B clean package -DskipTests
+            mvn -B clean package -DskipTests
 
  Deploy:
     runs-on: [ label-01 ]
