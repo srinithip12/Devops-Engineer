@@ -144,14 +144,15 @@ jobs:
         cp -f ${{ github.workspace }}/Devops-Engineer/expense-tracker/target/expense-tracker-0.0.1-SNAPSHOT.jar /opt/expense-tracker/expense-tracker.jar
 
         # Stop existing app if running
-        if pgrep -f expense-tracker.jar > /dev/null; then
-          echo "Stopping existing Expense Tracker..."
-          pkill -f expense-tracker.jar
-        fi
-
-        # Start the app in background
-        nohup java -jar /opt/expense-tracker/expense-tracker.jar > /opt/expense-tracker/app.log 2>&1 &
-
+        sudo -u gitrunner bash -c '
+          if pgrep -f expense-tracker.jar > /dev/null; then
+            echo "Stopping existing Expense Tracker..."
+            pkill -f expense-tracker.jar
+          fi
+        
+          echo "Starting Expense Tracker..."
+          nohup java -jar /opt/expense-tracker/expense-tracker.jar > /opt/expense-tracker/app.log 2>&1 &
+        '
         echo "Expense Tracker deployed successfully!"
 
      - name: Verify the process
