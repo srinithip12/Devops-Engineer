@@ -145,15 +145,17 @@ jobs:
 
         # Stop existing app if running
         sudo -u gitrunner bash -c '
-          if pgrep -f expense-tracker.jar > /dev/null; then
+          PIDS=$(pgrep -f "java -jar /opt/expense-tracker/expense-tracker.jar")
+          if [ -n "$PIDS" ]; then
             echo "Stopping existing Expense Tracker..."
-            pkill -f expense-tracker.jar
+            kill $PIDS
           fi
         
           echo "Starting Expense Tracker..."
           nohup java -jar /opt/expense-tracker/expense-tracker.jar > /opt/expense-tracker/app.log 2>&1 &
         '
         echo "Expense Tracker deployed successfully!"
+        tail -n 20 /opt/expense-tracker/app.log
 
      - name: Verify the process
        run: |
