@@ -108,7 +108,7 @@ jobs:
               mvn -B clean verify sonar:sonar \
                 -Dsonar.projectKey=expense-tracker \
                 -Dsonar.projectName="expense-tracker" \
-                -Dsonar.projectVersion=$CV_VERSION \
+                -Dsonar.projectVersion=$CV-Version \
                 -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
                 -Dsonar.login=${{ secrets.SONAR_TOKEN }} \
                 -Dsonar.maven.plugin.version=4.0.0.4121
@@ -158,7 +158,6 @@ jobs:
           '
           
           echo "Expense Tracker deployed successfully!"
-          tail -n 20 /opt/expense-tracker/app.log
 
 
      - name: Verify the process
